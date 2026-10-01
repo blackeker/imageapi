@@ -30,140 +30,174 @@ DASHBOARD_HTML = """
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⚡ Multi-Category AI Image Studio & API</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <title>OmniArt AI Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0e14;
-      --card-bg: rgba(18, 24, 38, 0.85);
-      --primary: #00ff88;
-      --primary-glow: rgba(0, 255, 136, 0.35);
-      --accent: #ff0055;
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --border: rgba(255, 255, 255, 0.1);
+      --bg: #090a0f;
+      --card-bg: rgba(16, 18, 27, 0.75);
+      --input-bg: rgba(24, 28, 42, 0.6);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --accent: #22d3ee;
+      --text: #f8fafc;
+      --text-muted: #64748b;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(circle at top, #131b2e 0%, var(--bg) 100%);
+      background: radial-gradient(circle at 50% 0%, #151828 0%, var(--bg) 80%);
       color: var(--text);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      padding: 30px 20px;
+      padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 30px; }
-    h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 2.2rem;
-      color: #fff;
-      text-shadow: 0 0 20px var(--primary-glow);
-      letter-spacing: 2px;
-      margin-bottom: 8px;
-    }
-    h1 span { color: var(--primary); }
-    .subtitle { color: var(--text-muted); font-size: 0.95rem; }
+    .container { max-width: 1140px; margin: 0 auto; }
     
-    .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 25px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-    
-    .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
     }
-    .card-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
-      margin-bottom: 18px;
+    .brand {
       display: flex;
       align-items: center;
       gap: 10px;
-      color: var(--primary);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
     }
-    
-    .category-tabs {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 8px;
-      margin-bottom: 20px;
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(34, 211, 238, 0.2);
     }
-    .cat-btn {
-      background: rgba(255,255,255,0.05);
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .status-text { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Kategori Hapları */
+    .category-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .chip {
+      background: var(--input-bg);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      padding: 10px 8px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
       cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      user-select: none;
     }
-    .cat-btn span { font-size: 1.2rem; }
-    .cat-btn:hover { background: rgba(0,255,136,0.1); color: #fff; border-color: var(--primary); }
-    .cat-btn.active {
+    .chip:hover { color: #fff; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+    .chip.active {
       background: var(--primary);
-      color: #000;
-      font-weight: 700;
-      border-color: var(--primary);
-      box-shadow: 0 0 15px var(--primary-glow);
-    }
-    
-    label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-    textarea, select, input {
-      width: 100%;
-      background: rgba(10, 14, 23, 0.8);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
       color: #fff;
-      font-size: 0.95rem;
-      font-family: inherit;
-      margin-bottom: 16px;
-      transition: all 0.2s;
-    }
-    textarea:focus, select:focus, input:focus {
-      outline: none;
+      font-weight: 600;
       border-color: var(--primary);
       box-shadow: 0 0 12px var(--primary-glow);
     }
-    textarea { resize: vertical; min-height: 110px; }
+
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
     
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    textarea, select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      background: rgba(24, 28, 42, 0.9);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    textarea { resize: vertical; min-height: 105px; line-height: 1.45; }
     
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
     .btn-generate {
       width: 100%;
-      background: linear-gradient(135deg, var(--primary) 0%, #00cc6a 100%);
-      color: #000;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 15px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 12px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px var(--primary-glow);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
+      margin-top: 14px;
     }
-    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 25px var(--primary-glow); }
-    .btn-generate:disabled { background: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
-    
+    .btn-generate:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--primary-glow); }
+    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Önizleme */
     .preview-box {
       width: 100%;
-      min-height: 420px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 2px dashed var(--border);
+      min-height: 380px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -172,119 +206,134 @@ DASHBOARD_HTML = """
       overflow: hidden;
       position: relative;
     }
-    .preview-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+    .preview-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
     .spinner {
       display: none;
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(0, 255, 136, 0.2);
-      border-left-color: var(--primary);
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 12px;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    
+
+    .preview-meta {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .download-btn {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .download-btn:hover { text-decoration: underline; }
+
+    /* Galeri */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
     }
     .gallery-item {
-      position: relative;
       border-radius: 8px;
       overflow: hidden;
       aspect-ratio: 16/9;
       border: 1px solid var(--border);
+      background: #000;
     }
     .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
-    .gallery-item:hover img { transform: scale(1.05); }
-    
-    .api-badge {
-      display: inline-block;
-      background: rgba(0,255,136,0.15);
-      color: var(--primary);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-family: monospace;
-      margin-right: 8px;
-    }
+    .gallery-item:hover img { transform: scale(1.04); }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>⚡ <span>MULTI-CATEGORY</span> AI STUDIO</h1>
-      <p class="subtitle">Anime, Fotogerçekçi, Cyberpunk, Fantastik, 3D Render & Yağlı Boya API</p>
+      <div class="brand">
+        <span>⚡ OmniArt AI</span>
+        <span class="brand-badge">v1.0</span>
+      </div>
+      <div class="status-text">
+        <span class="status-dot"></span> API Hazır
+      </div>
     </header>
 
     <div class="grid">
-      <!-- SOL: GİRİŞ PANELİ -->
+      <!-- SOL: KONTROL PANELİ -->
       <div class="card">
-        <div class="card-title">🎭 Kategori Seçimi</div>
-        
-        <div class="category-tabs" id="catTabs">
-          <!-- JS ile doldurulacak -->
-        </div>
+        <div class="category-chips" id="catTabs"></div>
 
         <div class="row">
-          <div>
-            <label for="styleSelect">Alt Stil / Tarz</label>
-            <select id="styleSelect" onchange="onStyleChanged()"></select>
+          <div class="form-group">
+            <label for="styleSelect">Stil</label>
+            <select id="styleSelect"></select>
           </div>
-          <div>
-            <label for="providerSelect">AI Motoru</label>
+          <div class="form-group">
+            <label for="providerSelect">Motor</label>
             <select id="providerSelect">
-              <option value="auto">✨ Otomatik (Kategoriye En Uygun)</option>
-              <option value="perchance">Perchance (Ultra Keskin Anime)</option>
-              <option value="horde">Stable Horde (SDXL / Pony)</option>
-              <option value="pollinations">Pollinations (Hızlı Test)</option>
+              <option value="auto">Otomatik</option>
+              <option value="perchance">Perchance</option>
+              <option value="horde">Stable Horde (SDXL)</option>
+              <option value="pollinations">Pollinations</option>
             </select>
           </div>
         </div>
 
-        <label for="prompt">Prompt (Açıklama)</label>
-        <textarea id="prompt" placeholder="Görsel tarifinizi buraya yazın..."></textarea>
+        <div class="form-group">
+          <label for="prompt">Prompt</label>
+          <textarea id="prompt" placeholder="Görsel tarifini yazın..."></textarea>
+        </div>
 
         <div class="row">
-          <div>
-            <label for="shape">Görsel Formatı</label>
+          <div class="form-group">
+            <label for="shape">Boyut / Oran</label>
             <select id="shape">
-              <option value="landscape">16:9 Landscape (Geniş Ekran)</option>
-              <option value="square">1:1 Square (Kare Profil)</option>
-              <option value="portrait">9:16 Portrait (Dikey Telefon)</option>
+              <option value="landscape">16:9 Geniş</option>
+              <option value="square">1:1 Kare</option>
+              <option value="portrait">9:16 Dikey</option>
             </select>
           </div>
-          <div style="display:flex; align-items:flex-end;">
+          <div>
             <button id="genBtn" class="btn-generate" onclick="startGeneration()">
-              <span>✨ GÖRSELİ ÜRET</span>
+              <span>Görsel Üret</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- SAĞ: ÖNİZLEME PANELİ -->
+      <!-- SAĞ: ÖNİZLEME -->
       <div class="card">
-        <div class="card-title">🖼️ Canlı Önizleme & Çıktı</div>
         <div class="preview-box" id="previewBox">
           <div class="spinner" id="spinner"></div>
-          <p id="placeholderText" style="color:var(--text-muted); font-size:0.9rem;">Henüz bir görsel üretilmedi.</p>
-          <img id="resultImg" style="display:none;" alt="Generated Result">
+          <p id="placeholderText" style="color:var(--text-muted); font-size:0.85rem;">Önizleme alanı</p>
+          <img id="resultImg" style="display:none;" alt="Sonuç">
         </div>
         
-        <div id="metaInfo" style="margin-top:15px; font-size:0.85rem; color:var(--text-muted); display:none;">
-          <span class="api-badge" id="modelBadge">Sağlayıcı: Auto</span>
-          <span id="elapsedBadge">Süre: --s</span>
-          <a id="downloadLink" href="#" download="generated_image.png" style="float:right; color:var(--primary); text-decoration:none; font-weight:600;">⬇️ İndir</a>
+        <div class="preview-meta" id="metaInfo">
+          <span id="infoBadge">--</span>
+          <a id="downloadLink" class="download-btn" href="#" download="image.png">İndir ↓</a>
         </div>
       </div>
     </div>
 
     <!-- ALT: GALERİ -->
-    <div class="card" style="margin-top:25px;">
-      <div class="card-title">📚 Üretilenler Galerisi</div>
+    <div class="card" style="margin-top:24px;">
+      <div class="section-title">Galeri</div>
       <div class="gallery-grid" id="galleryGrid"></div>
     </div>
   </div>
@@ -313,19 +362,19 @@ DASHBOARD_HTML = """
       Object.keys(CATEGORIES_DATA).forEach((catKey, idx) => {
         const cat = CATEGORIES_DATA[catKey];
         const btn = document.createElement('div');
-        btn.className = 'cat-btn' + (idx === 0 ? ' active' : '');
-        btn.innerHTML = `<span>${cat.icon}</span>${cat.name.split(' ')[0]}`;
+        btn.className = 'chip' + (idx === 0 ? ' active' : '');
+        btn.innerHTML = `${cat.icon} ${cat.name.split(' ')[0]}`;
         btn.onclick = () => selectCategory(catKey, btn);
         tabsEl.appendChild(btn);
       });
 
-      selectCategory('anime', document.querySelector('.cat-btn'));
+      selectCategory('anime', document.querySelector('.chip'));
       loadGallery();
     }
 
     function selectCategory(catKey, btnEl) {
       currentCategory = catKey;
-      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
 
       const styleSel = document.getElementById('styleSelect');
@@ -340,8 +389,6 @@ DASHBOARD_HTML = """
 
       document.getElementById('prompt').value = PROMPT_DEFAULTS[catKey] || '';
     }
-
-    function onStyleChanged() {}
 
     async function loadGallery() {
       try {
@@ -360,7 +407,7 @@ DASHBOARD_HTML = """
 
     async function startGeneration() {
       const prompt = document.getElementById('prompt').value.trim();
-      if (!prompt) return alert('Lütfen bir prompt girin.');
+      if (!prompt) return alert('Lütfen prompt girin.');
 
       const style = document.getElementById('styleSelect').value;
       const provider = document.getElementById('providerSelect').value;
@@ -372,10 +419,10 @@ DASHBOARD_HTML = """
       const metaInfo = document.getElementById('metaInfo');
 
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳ ÜRETİLİYOR...</span>';
+      btn.innerHTML = '<span>Üretiliyor...</span>';
       spinner.style.display = 'block';
       placeholder.style.display = 'block';
-      placeholder.innerText = `${currentCategory.toUpperCase()} kategorisinde görsel üretiliyor...`;
+      placeholder.innerText = 'Görsel oluşturuluyor...';
       resultImg.style.display = 'none';
       metaInfo.style.display = 'none';
 
@@ -393,9 +440,8 @@ DASHBOARD_HTML = """
           placeholder.style.display = 'none';
           spinner.style.display = 'none';
 
-          metaInfo.style.display = 'block';
-          document.getElementById('modelBadge').innerText = `Motor: ${data.provider.toUpperCase()} ${data.model || ''}`;
-          document.getElementById('elapsedBadge').innerText = `Süre: ${data.elapsed_seconds}s (${data.size_kb} KB)`;
+          metaInfo.style.display = 'flex';
+          document.getElementById('infoBadge').innerText = `${data.provider.toUpperCase()} • ${data.elapsed_seconds}s • ${data.size_kb} KB`;
           document.getElementById('downloadLink').href = data.url;
 
           loadGallery();
@@ -410,7 +456,7 @@ DASHBOARD_HTML = """
         placeholder.innerText = 'Hata oluştu.';
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<span>✨ GÖRSELİ ÜRET</span>';
+        btn.innerHTML = '<span>Görsel Üret</span>';
       }
     }
 
