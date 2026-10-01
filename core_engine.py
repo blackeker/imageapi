@@ -64,7 +64,7 @@ async def generate_perchance(
     shape: str = "landscape", # landscape, square, portrait
     art_style: str = "Painted Anime",
     output_filename: str = None,
-    timeout: int = 90
+    timeout: int = 20
 ) -> dict:
     start_t = time.time()
     filename = output_filename or f"perchance_{int(time.time())}_{random.randint(100,999)}.png"
