@@ -88,21 +88,25 @@ async def generate_perchance(
         page.on("response", on_response)
 
         await page.goto("https://perchance.org/ai-text-to-image-generator", wait_until="domcontentloaded", timeout=45000)
-        await page.wait_for_timeout(7000)
-
-        # Frame bul
+        
+        # Dinamik Frame Bul (7 saniye beklemek yerine anında tespit et)
         target_frame = None
-        for frame in page.frames:
-            if "perchance.org/ai-text-to-image" in frame.url and frame.url != "https://perchance.org/ai-text-to-image-generator":
-                target_frame = frame
-                break
-        if not target_frame:
+        for _ in range(25): # Maks 5 saniye bekle
             for frame in page.frames:
+                if "perchance.org/ai-text-to-image" in frame.url and frame.url != "https://perchance.org/ai-text-to-image-generator":
+                    target_frame = frame
+                    break
                 try:
                     if await frame.query_selector("#generateButtonEl"):
                         target_frame = frame
                         break
                 except: pass
+            if target_frame:
+                break
+            await page.wait_for_timeout(200)
+
+        if not target_frame:
+            target_frame = page.main_frame
         # Art style & Shape seçimi
         try:
             await target_frame.evaluate("""({ artStyle, shape }) => {
@@ -411,17 +415,39 @@ def generate(
     provider = provider.lower()
 
     if provider == "perchance":
-        # Perchance'ta doğrudan zenginleştirilmiş prompt kullanılır
-        return asyncio.run(generate_perchance(enhanced_prompt, shape=shape, **kwargs))
+        try:
+            return asyncio.run(generate_perchance(enhanced_prompt, shape=shape, art_style=style, **kwargs))
+        except Exception as e:
+            print(f"[CoreEngine] Perchance üretimi başarısız ({e}), Stable Horde motoruna geçiliyor...")
+            try:
+                return generate_horde(
+                    prompt=enhanced_prompt,
+                    negative_prompt=negative_prompt,
+                    models=suggested_models,
+                    width=width,
+                    height=height,
+                    **kwargs
+                )
+            except Exception as e2:
+                print(f"[CoreEngine] Horde üretimi başarısız ({e2}), Pollinations motoruna geçiliyor...")
+                polli_model = "flux-anime" if category == "anime" else "flux"
+                return generate_pollinations(enhanced_prompt, width=width, height=height, model=polli_model, **kwargs)
+
     elif provider == "horde":
-        return generate_horde(
-            prompt=enhanced_prompt,
-            negative_prompt=negative_prompt,
-            models=suggested_models,
-            width=width,
-            height=height,
-            **kwargs
-        )
+        try:
+            return generate_horde(
+                prompt=enhanced_prompt,
+                negative_prompt=negative_prompt,
+                models=suggested_models,
+                width=width,
+                height=height,
+                **kwargs
+            )
+        except Exception as e:
+            print(f"[CoreEngine] Horde üretimi başarısız ({e}), Pollinations motoruna geçiliyor...")
+            polli_model = "flux-anime" if category == "anime" else "flux"
+            return generate_pollinations(enhanced_prompt, width=width, height=height, model=polli_model, **kwargs)
+
     elif provider == "pollinations":
         polli_model = "flux-anime" if category == "anime" else "flux"
         return generate_pollinations(enhanced_prompt, width=width, height=height, model=polli_model, **kwargs)
