@@ -303,9 +303,9 @@ DASHBOARD_HTML = """
           <div class="form-group">
             <label for="shape">Boyut / Oran</label>
             <select id="shape">
-              <option value="landscape">16:9 Geniş</option>
-              <option value="square">1:1 Kare</option>
-              <option value="portrait">9:16 Dikey</option>
+              <option value="768x512" selected>Landscape (768x512px)</option>
+              <option value="512x512">Square (512x512px)</option>
+              <option value="512x768">Portrait (512x768px)</option>
             </select>
           </div>
           <div>
@@ -349,16 +349,20 @@ DASHBOARD_HTML = """
       fantasy: 'epic armored paladin knight holding a glowing broadsword, standing in front of gothic castle ruins, volumetric lightning, dark fantasy concept art',
       digital_art: 'cute 3d robot explorer holding a glowing crystal, Pixar and Disney 3D style, warm soft lighting, vibrant colors, rendered in Octane Render',
       pixel_art: '16-bit pixel art of a cyberpunk samurai warrior on a rainy neon rooftop, retro arcade game aesthetic',
-      oil_painting: 'dramatic classical oil painting of a medieval warrior, Rembrandt lighting, rich canvas texture, museum fine art'
+      oil_painting: 'dramatic classical oil painting of a medieval warrior, Rembrandt lighting, rich canvas texture, museum fine art',
+      all_styles: 'masterpiece illustration, vibrant color harmony, ultra detailed atmosphere'
     };
 
     async function init() {
       const res = await fetch('/api/v1/categories');
-      CATEGORIES_DATA = await res.json();
+      const apiData = await res.json();
+      CATEGORIES_DATA = apiData.categories || apiData;
+      const allPerchanceStyles = apiData.perchance_all_styles || [];
       
       const tabsEl = document.getElementById('catTabs');
       tabsEl.innerHTML = '';
       
+      // Kategori sekmeleri
       Object.keys(CATEGORIES_DATA).forEach((catKey, idx) => {
         const cat = CATEGORIES_DATA[catKey];
         const btn = document.createElement('div');
@@ -367,6 +371,26 @@ DASHBOARD_HTML = """
         btn.onclick = () => selectCategory(catKey, btn);
         tabsEl.appendChild(btn);
       });
+
+      // Tüm Stiller Sekmesi
+      const allBtn = document.createElement('div');
+      allBtn.className = 'chip';
+      allBtn.innerHTML = `✨ Tüm Stiller (100+)`;
+      allBtn.onclick = () => {
+        currentCategory = "all_styles";
+        document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+        allBtn.classList.add('active');
+        const styleSel = document.getElementById('styleSelect');
+        styleSel.innerHTML = '';
+        allPerchanceStyles.forEach(st => {
+          const opt = document.createElement('option');
+          opt.value = st;
+          opt.innerText = st;
+          styleSel.appendChild(opt);
+        });
+        document.getElementById('prompt').value = PROMPT_DEFAULTS['all_styles'] || '';
+      };
+      tabsEl.appendChild(allBtn);
 
       selectCategory('anime', document.querySelector('.chip'));
       loadGallery();
@@ -379,7 +403,7 @@ DASHBOARD_HTML = """
 
       const styleSel = document.getElementById('styleSelect');
       styleSel.innerHTML = '';
-      const styles = CATEGORIES_DATA[catKey].styles || {};
+      const styles = (CATEGORIES_DATA[catKey] && CATEGORIES_DATA[catKey].styles) || {};
       Object.keys(styles).forEach(sKey => {
         const opt = document.createElement('option');
         opt.value = sKey;

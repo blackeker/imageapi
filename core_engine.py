@@ -103,21 +103,49 @@ async def generate_perchance(
                         target_frame = frame
                         break
                 except: pass
-        if not target_frame: target_frame = page.main_frame
+        # Art style & Shape seçimi
+        try:
+            await target_frame.evaluate("""({ artStyle, shape }) => {
+                // 1. Art Style Seç
+                const styleSel = document.querySelector('select[data-name="artStyle"]') ||
+                                 Array.from(document.querySelectorAll('select')).find(s => s.innerHTML.includes('Painted Anime'));
+                if (styleSel && artStyle) {
+                    const target = artStyle.trim().toLowerCase();
+                    for (let opt of styleSel.options) {
+                        const txt = opt.text.trim().toLowerCase();
+                        const val = opt.value.trim().toLowerCase();
+                        if (txt === target || val.includes(target) || txt.includes(target)) {
+                            styleSel.value = opt.value;
+                            styleSel.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
+                        }
+                    }
+                }
 
-        # Art style seç
-        if art_style:
-            try:
-                selects = await target_frame.query_selector_all("select")
-                for sel in selects:
-                    opts = await sel.query_selector_all("option")
-                    for opt in opts:
-                        txt = (await opt.text_content()) or ""
-                        if art_style.lower() in txt.lower():
-                            val = await opt.get_attribute("value")
-                            await sel.select_option(value=val)
-                            break
-            except: pass
+                // 2. Shape (Boyut) Seç
+                const shapeSel = document.querySelector('select[data-name="shape"]') ||
+                                 Array.from(document.querySelectorAll('select')).find(s => s.innerHTML.includes('512x768') || s.innerHTML.includes('768x512'));
+                if (shapeSel && shape) {
+                    const shapeMap = {
+                        'landscape': '768x512',
+                        'square': '512x512',
+                        'portrait': '512x768',
+                        '768x512': '768x512',
+                        '512x512': '512x512',
+                        '512x768': '512x768'
+                    };
+                    const targetShape = shapeMap[shape.trim().toLowerCase()] || shape;
+                    for (let opt of shapeSel.options) {
+                        if (opt.value === targetShape || opt.text.includes(targetShape)) {
+                            shapeSel.value = opt.value;
+                            shapeSel.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
+                        }
+                    }
+                }
+            }""", {"artStyle": art_style or "Painted Anime Plus", "shape": shape or "768x512"})
+        except Exception as e:
+            print(f"[Perchance] ArtStyle / Shape seçim logu: {e}")
 
         # Textarea bul & doldur
         textareas = await target_frame.query_selector_all('textarea')

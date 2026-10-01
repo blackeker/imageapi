@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--category", "-c", type=str, default="anime", choices=list(CATEGORIES.keys()), help="Kategori")
     parser.add_argument("--style", type=str, default=None, help="Alt stil (örn: studio_portrait, ghibli, dark_fantasy)")
     parser.add_argument("--provider", "-m", type=str, default="auto", choices=["auto", "perchance", "horde", "pollinations"], help="AI Motoru")
-    parser.add_argument("--shape", "-s", type=str, default="landscape", choices=["landscape", "square", "portrait"], help="Format / Oran")
+    parser.add_argument("--shape", "-s", type=str, default="768x512", choices=["768x512", "512x512", "512x768", "landscape", "square", "portrait"], help="Format / Oran")
     parser.add_argument("--output", "-o", type=str, default=None, help="Çıktı dosya adı")
     parser.add_argument("--categories", action="store_true", help="Tüm kategorileri ve stilleri listele")
     parser.add_argument("--gallery", "-g", action="store_true", help="Galerideki görselleri listele")
@@ -31,9 +31,9 @@ def main():
         print("DESTEKLENEN KATEGORİLER VE STİLLER")
         print("=" * 60)
         for cat_id, cat_info in CATEGORIES.items():
-            print(f"\n[{cat_id.upper()}] - {cat_info['name']}")
-            print(f"   Açıklama: {cat_info['description']}")
-            print(f"   Stiller:  {', '.join(cat_info['styles'].keys())}")
+            print(f"\n[{cat_id.upper()}] - {cat_info['name']} {cat_info.get('icon', '')}")
+            st_keys = list(cat_info['styles'].keys())
+            print(f"   Stiller:  {', '.join(st_keys)}")
         return
 
     if args.gallery:
