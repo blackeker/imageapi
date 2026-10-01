@@ -16,6 +16,7 @@ Kullanım:
    python perchance_service.py --server
 """
 
+import os
 import sys
 import io
 import time
@@ -26,9 +27,42 @@ import asyncio
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 TARGET_URL = "https://perchance.org/ai-text-to-image-generator"
+
+async def _launch_browser(pw):
+    """
+    Linux / Sunucu veya Masaüstü ortamına göre tarayıcıyı en uygun modda başlatır.
+    XServer / DISPLAY yoksa otomatik headless moduna geçer.
+    """
+    is_server_env = os.environ.get("HEADLESS", "").lower() in ("true", "1") or (
+        sys.platform != "win32" and not os.environ.get("DISPLAY")
+    )
+
+    base_args = [
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+    ]
+
+    if not is_server_env:
+        try:
+            return await pw.chromium.launch(
+                headless=False,
+                args=base_args + ["--start-maximized"],
+                slow_mo=50
+            )
+        except Exception as e:
+            print(f"[SmartLauncher] Headed mod başlatılamadı ({e}), Headless moda geçiliyor...")
+
+    return await pw.chromium.launch(
+        headless=True,
+        args=base_args
+    )
 
 async def async_generate_perchance_image(
     prompt: str,
@@ -43,20 +77,11 @@ async def async_generate_perchance_image(
     downloaded_images = []
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(
-            headless=False, # Cloudflare Turnstile'ı aşmak için görünür mod
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--start-maximized"
-            ],
-            slow_mo=50
-        )
+        browser = await _launch_browser(pw)
 
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
-            locale="en-US",
-            no_viewport=True
+            locale="en-US"
         )
 
         page = await context.new_page()

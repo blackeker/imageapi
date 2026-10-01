@@ -4,6 +4,7 @@ Unified Multi-Category AI Image Generation Core Engine
 Perchance, Stable Horde ve Pollinations motorlarını çoklu kategori (Anime, Gerçekçi, Cyberpunk, Fantastik, 3D, Pixel Art vb.) desteğiyle çalıştırır.
 """
 
+import os
 import sys
 import io
 import time
@@ -22,6 +23,39 @@ if hasattr(sys.stdout, 'reconfigure'):
 OUTPUT_DIR = Path("gallery")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+async def _launch_browser(pw):
+    """
+    Linux / Sunucu veya Masaüstü ortamına göre tarayıcıyı en uygun modda başlatır.
+    XServer / DISPLAY yoksa otomatik headless moduna geçer.
+    """
+    is_server_env = os.environ.get("HEADLESS", "").lower() in ("true", "1") or (
+        sys.platform != "win32" and not os.environ.get("DISPLAY")
+    )
+
+    base_args = [
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+    ]
+
+    if not is_server_env:
+        try:
+            return await pw.chromium.launch(
+                headless=False,
+                args=base_args + ["--start-maximized"],
+                slow_mo=50
+            )
+        except Exception as e:
+            print(f"[SmartLauncher] Headed mod başlatılamadı ({e}), Headless moda geçiliyor...")
+
+    # Headless fallback veya sunucu ortamı
+    return await pw.chromium.launch(
+        headless=True,
+        args=base_args
+    )
+
 # -------------------------------------------------------------
 # 1. PERCHANCE MOTORU
 # -------------------------------------------------------------
@@ -38,12 +72,8 @@ async def generate_perchance(
     downloaded_images = []
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--start-maximized"],
-            slow_mo=50
-        )
-        context = await browser.new_context(viewport={"width": 1920, "height": 1080}, locale="en-US", no_viewport=True)
+        browser = await _launch_browser(pw)
+        context = await browser.new_context(viewport={"width": 1920, "height": 1080}, locale="en-US")
         page = await context.new_page()
 
         async def on_response(response):
