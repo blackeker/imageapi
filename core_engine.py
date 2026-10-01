@@ -181,6 +181,10 @@ async def generate_perchance(
             print(f"[Perchance] NSFW/Tercih logu: {e}")
 
         # Textarea bul & doldur
+        try:
+            await target_frame.wait_for_selector('textarea', timeout=10000)
+        except: pass
+
         textareas = await target_frame.query_selector_all('textarea')
         prompt_ta = None
         for ta in textareas:
@@ -189,6 +193,9 @@ async def generate_perchance(
                 prompt_ta = ta
                 break
         if not prompt_ta and textareas: prompt_ta = textareas[-1] if len(textareas) > 1 else textareas[0]
+
+        if not prompt_ta:
+            raise Exception("Prompt textarea bulunamadı.")
 
         # How many = 1
         try:
@@ -205,7 +212,7 @@ async def generate_perchance(
         await prompt_ta.fill(prompt)
         await prompt_ta.evaluate("el => el.dispatchEvent(new Event('input', {bubbles: true}))")
         await prompt_ta.evaluate("el => el.dispatchEvent(new Event('change', {bubbles: true}))")
-        await page.wait_for_timeout(1000)
+        await page.wait_for_timeout(500)
 
         # Generate tıkla
         gen_btn = await target_frame.query_selector("#generateButtonEl, button:has-text('generate')")
@@ -309,18 +316,24 @@ def generate_horde(
 
     req_id = res.json()["id"]
 
-    while True:
-        time.sleep(3)
-        check = requests.get(f"https://aihorde.net/api/v2/generate/check/{req_id}", headers=headers, timeout=30).json()
-        if check.get("done", False): break
-        if time.time() - start_t > 150: raise TimeoutError("Horde işlemi zaman aşımına uğradı.")
+    while time.time() - start_t < 20:
+        time.sleep(2.0)
+        try:
+            check = requests.get(f"https://aihorde.net/api/v2/generate/check/{req_id}", headers=headers, timeout=10).json()
+            if check.get("done", False): break
+        except: pass
 
-    status = requests.get(f"https://aihorde.net/api/v2/generate/status/{req_id}", headers=headers, timeout=30).json()
-    gens = status.get("generations", [])
-    if not gens: raise Exception("Görsel oluşturulamadı.")
+    try:
+        status = requests.get(f"https://aihorde.net/api/v2/generate/status/{req_id}", headers=headers, timeout=10).json()
+        gens = status.get("generations", [])
+    except:
+        gens = []
+
+    if not gens:
+        raise TimeoutError("Horde kuyrukta çok bekledi, hızlı motora geçiliyor.")
 
     img_data = gens[0].get("img")
-    used_model = gens[0].get("model", "Bilinmiyor")
+    used_model = gens[0].get("model", "SDXL")
 
     if img_data.startswith("http"):
         raw = requests.get(img_data).content
