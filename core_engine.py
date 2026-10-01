@@ -28,32 +28,27 @@ async def _launch_browser(pw):
     """
     Linux (Xvfb / Headless) veya Windows pencereli moduna göre tarayıcıyı başlatır.
     """
-    is_server_env = os.environ.get("HEADLESS", "").lower() in ("true", "1") or (
-        sys.platform != "win32" and not os.environ.get("DISPLAY")
-    )
-
     base_args = [
         "--disable-blink-features=AutomationControlled",
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
-        "--disable-gpu"
+        "--disable-gpu",
+        "--start-maximized",
+        "--window-size=1920,1080"
     ]
 
-    if not is_server_env:
-        try:
-            return await pw.chromium.launch(
-                headless=False,
-                args=base_args + ["--start-maximized"],
-                slow_mo=50
-            )
-        except Exception as e:
-            print(f"[SmartLauncher] Headed mod başlatılamadı ({e}), Headless moda geçiliyor...")
-
-    return await pw.chromium.launch(
-        headless=True,
-        args=base_args
-    )
+    try:
+        return await pw.chromium.launch(
+            headless=False,
+            args=base_args
+        )
+    except Exception as e:
+        print(f"[CoreEngine] Headed mod başlatılamadı ({e}), Headless moda geçiliyor...", flush=True)
+        return await pw.chromium.launch(
+            headless=True,
+            args=base_args
+        )
 
 async def generate_perchance(
     prompt: str,
@@ -69,6 +64,8 @@ async def generate_perchance(
     filename = output_filename or f"perchance_{int(time.time())}_{random.randint(100,999)}.png"
     filepath = OUTPUT_DIR / filename
     downloaded_images = []
+
+    print(f"[Perchance] Üretim başlatılıyor: '{prompt[:40]}...' (Stil: {art_style}, Boyut: {shape})", flush=True)
 
     async with async_playwright() as pw:
         browser = await _launch_browser(pw)
@@ -86,29 +83,37 @@ async def generate_perchance(
                     data = await response.body()
                     if len(data) > 10000:
                         downloaded_images.append(data)
+                        print(f"[Perchance] Ağ üzerinden görsel yakalandı! ({len(data)} bayt)", flush=True)
                 except:
                     pass
 
         page.on("response", on_response)
 
         # 1. Sayfayı aç
+        print("[Perchance] 1. Perchance sayfasına gidiliyor...", flush=True)
         await page.goto("https://perchance.org/ai-text-to-image-generator", wait_until="domcontentloaded", timeout=45000)
+        await page.wait_for_timeout(6000)
         
         # 2. Target frame bul (perchance.org barındıran alt frame)
+        print("[Perchance] 2. Hedef frame taranıyor...", flush=True)
         target_frame = None
-        for _ in range(30):
+        for frame in page.frames:
+            if frame != page.main_frame and "perchance.org" in frame.url:
+                try:
+                    btn = await frame.query_selector("#generateButtonEl")
+                    if btn:
+                        target_frame = frame
+                        print(f"[Perchance] #generateButtonEl içeren ana iframe bulundu: {frame.url}", flush=True)
+                        break
+                except:
+                    pass
+
+        if not target_frame:
             for frame in page.frames:
                 if frame != page.main_frame and "perchance.org" in frame.url:
-                    try:
-                        btn = await frame.query_selector("#generateButtonEl")
-                        if btn:
-                            target_frame = frame
-                            break
-                    except:
-                        pass
-            if target_frame:
-                break
-            await page.wait_for_timeout(200)
+                    target_frame = frame
+                    print(f"[Perchance] Perchance alt iframe bulundu: {frame.url}", flush=True)
+                    break
 
         if not target_frame:
             for frame in page.frames:
@@ -118,6 +123,8 @@ async def generate_perchance(
 
         if not target_frame:
             target_frame = page.main_frame
+
+        print(f"[Perchance] Seçilen frame: {target_frame.url}", flush=True)
 
         # 3. Art style & Shape seçimi
         try:
@@ -233,6 +240,9 @@ async def generate_perchance(
             await gen_btn.scroll_into_view_if_needed()
             await page.wait_for_timeout(200)
             await gen_btn.click()
+            print("[Perchance] 3. Generate butonuna tıklandı! Görsel üretimi bekleniyor...", flush=True)
+        else:
+            print("[Perchance] UYARI: Generate butonu bulunamadı!", flush=True)
 
         # 7. Bekle & Görseli Çek
         while time.time() - start_t < timeout:
