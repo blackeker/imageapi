@@ -147,6 +147,35 @@ async def generate_perchance(
         except Exception as e:
             print(f"[Perchance] ArtStyle / Shape seçim logu: {e}")
 
+        # Otomatik Yaş Doğrulama / Tercihler (NSFW Desteği)
+        try:
+            await target_frame.evaluate("""() => {
+                try {
+                    // Preferences aç ve 'warn' seçeneğini işaretle
+                    if (typeof window.showPreferences === 'function') {
+                        window.showPreferences();
+                    }
+                    const sensitiveSel = document.querySelector('#sensitiveContentVisibilityEl');
+                    if (sensitiveSel) {
+                        sensitiveSel.value = 'warn';
+                        sensitiveSel.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    const ageCheckbox = document.querySelector('#ageVerificationCheckboxEl');
+                    if (ageCheckbox) {
+                        ageCheckbox.checked = true;
+                        ageCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    // Modal kapat/kaydet
+                    const closeBtns = Array.from(document.querySelectorAll('button, span, a')).filter(b => {
+                        const t = (b.innerText || '').toLowerCase();
+                        return t.includes('save') || t.includes('close') || t.includes('done') || t.includes('tamam');
+                    });
+                    if (closeBtns.length > 0) closeBtns[0].click();
+                } catch(e) {}
+            }""")
+        except Exception as e:
+            print(f"[Perchance] NSFW/Tercih logu: {e}")
+
         # Textarea bul & doldur
         textareas = await target_frame.query_selector_all('textarea')
         prompt_ta = None
@@ -181,9 +210,25 @@ async def generate_perchance(
             await page.wait_for_timeout(300)
             await gen_btn.click()
 
-        # Bekle
+        # Bekle & Sensitive Blur Aş
         while time.time() - start_t < timeout:
             await page.wait_for_timeout(3000)
+
+            # Hassas içerik uyarısı / modal varsa tıkla
+            try:
+                await target_frame.evaluate("""() => {
+                    const warnings = Array.from(document.querySelectorAll('*')).filter(el => {
+                        const t = (el.innerText || '').toLowerCase();
+                        return t.includes('show image') || t.includes('view sensitive') || t.includes('i understand') || t.includes('click to view');
+                    });
+                    for (let w of warnings) {
+                        if (w.tagName === 'BUTTON' || w.tagName === 'A' || w.tagName === 'DIV' || w.tagName === 'SPAN') {
+                            w.click();
+                        }
+                    }
+                }""")
+            except: pass
+
             if downloaded_images: break
             try:
                 img_data = await target_frame.evaluate("""() => {
