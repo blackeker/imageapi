@@ -94,22 +94,27 @@ async def generate_perchance(
         # 1. Sayfayı aç
         await page.goto("https://perchance.org/ai-text-to-image-generator", wait_until="domcontentloaded", timeout=45000)
         
-        # 2. Frame bul
+        # 2. Target frame bul (perchance.org barındıran alt frame)
         target_frame = None
         for _ in range(30):
             for frame in page.frames:
-                if "perchance.org/ai-text-to-image" in frame.url and frame.url != "https://perchance.org/ai-text-to-image-generator":
-                    target_frame = frame
-                    break
-                try:
-                    if await frame.query_selector("#generateButtonEl"):
-                        target_frame = frame
-                        break
-                except:
-                    pass
+                if frame != page.main_frame and "perchance.org" in frame.url:
+                    try:
+                        btn = await frame.query_selector("#generateButtonEl")
+                        if btn:
+                            target_frame = frame
+                            break
+                    except:
+                        pass
             if target_frame:
                 break
             await page.wait_for_timeout(200)
+
+        if not target_frame:
+            for frame in page.frames:
+                if frame != page.main_frame:
+                    target_frame = frame
+                    break
 
         if not target_frame:
             target_frame = page.main_frame
